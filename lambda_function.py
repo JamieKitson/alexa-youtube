@@ -805,7 +805,7 @@ def get_url_and_title_pytube(id, retry=True):
     else:
         first_stream = yt.streams.filter(only_audio=True, subtype='mp4').first()
     logger.info(first_stream.url)
-    return first_stream.url, first_stream.player_config_args['player_response']['videoDetails']['title']
+    return first_stream.url, first_stream.title
 
 
 def get_url_and_title_pytube_server(id):

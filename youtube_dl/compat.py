@@ -21,6 +21,10 @@ import subprocess
 import sys
 import xml.etree.ElementTree
 
+try:
+    import collections.abc as compat_collections_abc
+except ImportError:
+    import collections as compat_collections_abc
 
 try:
     import urllib.request as compat_urllib_request
@@ -57,10 +61,30 @@ try:
 except ImportError:  # Python 2
     import cookielib as compat_cookiejar
 
+if sys.version_info[0] == 2:
+    class compat_cookiejar_Cookie(compat_cookiejar.Cookie):
+        def __init__(self, version, name, value, *args, **kwargs):
+            if isinstance(name, compat_str):
+                name = name.encode()
+            if isinstance(value, compat_str):
+                value = value.encode()
+            compat_cookiejar.Cookie.__init__(self, version, name, value, *args, **kwargs)
+else:
+    compat_cookiejar_Cookie = compat_cookiejar.Cookie
+
 try:
     import http.cookies as compat_cookies
 except ImportError:  # Python 2
     import Cookie as compat_cookies
+
+if sys.version_info[0] == 2:
+    class compat_cookies_SimpleCookie(compat_cookies.SimpleCookie):
+        def load(self, rawdata):
+            if isinstance(rawdata, compat_str):
+                rawdata = str(rawdata)
+            return super(compat_cookies_SimpleCookie, self).load(rawdata)
+else:
+    compat_cookies_SimpleCookie = compat_cookies.SimpleCookie
 
 try:
     import html.entities as compat_html_entities
@@ -2334,7 +2358,7 @@ except ImportError:  # Python <3.4
 
         # HTMLParseError has been deprecated in Python 3.3 and removed in
         # Python 3.5. Introducing dummy exception for Python >3.5 for compatible
-        # and uniform cross-version exceptiong handling
+        # and uniform cross-version exception handling
         class compat_HTMLParseError(Exception):
             pass
 
@@ -2754,6 +2778,17 @@ else:
         compat_expanduser = os.path.expanduser
 
 
+if compat_os_name == 'nt' and sys.version_info < (3, 8):
+    # os.path.realpath on Windows does not follow symbolic links
+    # prior to Python 3.8 (see https://bugs.python.org/issue9949)
+    def compat_realpath(path):
+        while os.path.islink(path):
+            path = os.path.abspath(os.readlink(path))
+        return path
+else:
+    compat_realpath = os.path.realpath
+
+
 if sys.version_info < (3, 0):
     def compat_print(s):
         from .utils import preferredencoding
@@ -2855,6 +2890,7 @@ else:
     _terminal_size = collections.namedtuple('terminal_size', ['columns', 'lines'])
 
     def compat_get_terminal_size(fallback=(80, 24)):
+        from .utils import process_communicate_or_kill
         columns = compat_getenv('COLUMNS')
         if columns:
             columns = int(columns)
@@ -2871,7 +2907,7 @@ else:
                 sp = subprocess.Popen(
                     ['stty', 'size'],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, err = sp.communicate()
+                out, err = process_communicate_or_kill(sp)
                 _lines, _columns = map(int, out.split())
             except Exception:
                 _columns, _lines = _terminal_size(*fallback)
@@ -2931,6 +2967,25 @@ else:
         compat_Struct = struct.Struct
 
 
+# compat_map/filter() returning an iterator, supposedly the
+# same versioning as for zip below
+try:
+    from future_builtins import map as compat_map
+except ImportError:
+    try:
+        from itertools import imap as compat_map
+    except ImportError:
+        compat_map = map
+
+try:
+    from future_builtins import filter as compat_filter
+except ImportError:
+    try:
+        from itertools import ifilter as compat_filter
+    except ImportError:
+        compat_filter = filter
+
+
 try:
     from future_builtins import zip as compat_zip
 except ImportError:  # not 2.6+ or is 3.x
@@ -2975,13 +3030,17 @@ __all__ = [
     'compat_b64decode',
     'compat_basestring',
     'compat_chr',
+    'compat_collections_abc',
     'compat_cookiejar',
+    'compat_cookiejar_Cookie',
     'compat_cookies',
+    'compat_cookies_SimpleCookie',
     'compat_ctypes_WINFUNCTYPE',
     'compat_etree_Element',
     'compat_etree_fromstring',
     'compat_etree_register_namespace',
     'compat_expanduser',
+    'compat_filter',
     'compat_get_terminal_size',
     'compat_getenv',
     'compat_getpass',
@@ -2993,11 +3052,13 @@ __all__ = [
     'compat_integer_types',
     'compat_itertools_count',
     'compat_kwargs',
+    'compat_map',
     'compat_numeric_types',
     'compat_ord',
     'compat_os_name',
     'compat_parse_qs',
     'compat_print',
+    'compat_realpath',
     'compat_setenv',
     'compat_shlex_quote',
     'compat_shlex_split',

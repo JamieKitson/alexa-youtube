@@ -22,7 +22,7 @@ class Cache(object):
     def _get_root_dir(self):
         res = self._ydl.params.get('cachedir')
         if res is None:
-            cache_root = compat_getenv('XDG_CACHE_HOME', '/tmp')
+            cache_root = compat_getenv('XDG_CACHE_HOME', '~/.cache')
             res = os.path.join(cache_root, 'youtube-dl')
         return expand_path(res)
 
