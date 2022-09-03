@@ -741,7 +741,7 @@ def get_url_and_title_youtube_dl(id, retry=True):
     else:
         import youtube_dl
         logger.info('Getting youtube-dl url for https://www.youtube.com/watch?v='+id)
-        youtube_dl_properties = {}
+        youtube_dl_properties = { 'cachedir': '/tmp/' }
         if 'proxy_enabled' in environ and 'proxy' in environ and environ['proxy_enabled'].lower() == 'true':
             youtube_dl_properties['proxy'] = environ['proxy']
         try:
