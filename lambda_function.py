@@ -735,6 +735,7 @@ def get_url_and_title(id):
 
 def get_url_and_title_youtube_dl(id, retry=True):
     if 'youtube_dl' in environ and 'http' in environ['youtube_dl']:
+        logger.info('Getting youtube-dl url for https://www.youtube.com/watch?v='+id+' from server '+environ['youtube_dl'])
         params = {'id': id}
         r = requests.get(environ['youtube_dl'], params=params)
         info = r.json()
