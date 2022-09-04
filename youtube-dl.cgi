@@ -19,7 +19,7 @@ print()
 form = cgi.FieldStorage()
 id = form.getvalue('id') 
 
-youtube_dl_properties = { 'quiet' : True }
+youtube_dl_properties = { 'quiet' : True, 'cachedir' : '/tmp/' }
 with youtube_dl.YoutubeDL(youtube_dl_properties) as ydl:
                 yt_url = 'http://www.youtube.com/watch?v='+id
                 info = ydl.extract_info(yt_url, download=False)
