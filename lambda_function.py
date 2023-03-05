@@ -297,7 +297,7 @@ def on_intent(event):
     elif intent_name == "PlayMoreLikeThisIntent":
         return play_more_like_this(event)
     else:
-        raise ValueError("Invalid intent")
+        raise ValueError("Invalid intent: " + intent_name)
 
 
 def handle_playback(event):
@@ -546,6 +546,12 @@ def do_nothing():
     return build_response({})
 
 
+def external_search(query):
+    r = requests.get("http://s.kitten-x.com:5080/search.cgi?id=" + query)
+    logger.info(r.url)
+    return r.json()
+
+
 def youtube_search(query, search_type, maxResults, relatedToVideoId=None, channel_id=None, order=None, pageToken=None):
     if 'DEVELOPER_KEY' not in environ:
         return {'error': {'code': 400}}
@@ -560,6 +566,7 @@ def youtube_search(query, search_type, maxResults, relatedToVideoId=None, channe
     if 'youtube_search_url' in environ:
         youtube_search_url = environ['youtube_search_url']
     r = requests.get(youtube_search_url, params=params)
+    logger.info(r.url)
     return r.json()
 
 
@@ -606,7 +613,8 @@ def youtube_channel_search(username):
 
 def video_search(query=None, relatedToVideoId=None, channelId=None):
     try:
-        search_response = youtube_search(query, 'video', 50, relatedToVideoId, channelId)
+        #search_response = youtube_search(query, 'video', 50, relatedToVideoId, channelId)
+        search_response = external_search(query)
     except:
         return False, strings['youtubeerror']
     if 'error' in search_response:
@@ -1299,3 +1307,4 @@ def skill_expired():
     speech_output += 'If you would like to continue using this skill, please go to patreon.com/alexayoutube to renew your subscription. '
     speech_output += '</prosody></voice></speak> '
     return build_response(build_cardless_speechlet_response(speech_output, '', True, 'SSML'))
+
