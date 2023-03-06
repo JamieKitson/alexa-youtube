@@ -547,7 +547,7 @@ def do_nothing():
 
 
 def external_search(query):
-    r = requests.get("http://s.kitten-x.com:5080/search.cgi?id=" + query)
+    r = requests.get(environ['external_search'] + query)
     logger.info(r.url)
     return r.json()
 
